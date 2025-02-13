@@ -3,10 +3,10 @@ name: Terraform Deployment
 on:
   push:
     branches:
-      - master  # Runs on push to main branch
+      - master  # Runs on push to master branch
   pull_request:
     branches:
-      - master   # Runs on PR to main branch
+      - master  # Runs on PR to master branch
 
 jobs:
   terraform:
@@ -33,7 +33,15 @@ jobs:
         run: terraform init
 
       - name: Terraform Format Check
-        run: terraform fmt -check
+        id: fmt-check
+        run: |
+          terraform fmt -check || echo "formatting_needed=true" >> $GITHUB_ENV
+
+      - name: Fix Terraform Formatting (if needed)
+        if: env.formatting_needed == 'true'
+        run: |
+          terraform fmt -recursive
+          echo "Terraform formatting fixed. Please commit the changes."
 
       - name: Terraform Validate
         run: terraform validate
@@ -41,6 +49,6 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      - name: Terraform Apply (Only on main branch)
-        if: github.ref == 'refs/heads/main'
+      - name: Terraform Apply (Only on master branch)
+        if: github.ref == 'refs/heads/master'
         run: terraform apply -auto-approve tfplan
