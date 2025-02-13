@@ -9,3 +9,4 @@ resource "aws_instance" "dev" {
     Name = "dev-instance"
     env = "dev"
 }
+}
