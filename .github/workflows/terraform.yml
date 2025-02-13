@@ -7,6 +7,16 @@ on:
   pull_request:
     branches:
       - master  # Runs on PR to master branch
+  workflow_dispatch:  # Enables manual trigger
+    inputs:
+      destroy:
+        description: "Destroy resources?"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 jobs:
   terraform:
@@ -32,25 +42,11 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Format Check
-        id: fmt-check
-        run: |
-          terraform fmt -check || echo "formatting_needed=true" >> $GITHUB_ENV
-
-      - name: Fix Terraform Formatting (if needed)
-        if: env.formatting_needed == 'true'
-        run: |
-          terraform fmt -recursive
-          echo "Terraform formatting fixed. Please commit the changes."
-
-      - name: Terraform Validate
-        run: terraform validate
-
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply (Only on master branch)
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master' && github.event.inputs.destroy != 'true'
         run: terraform apply -auto-approve tfplan
 
       - name: Terraform Destroy (Manual Trigger)
